@@ -44,14 +44,14 @@ class EasyFloatingText
         self::$listener = new EasyFloatingTextListener();
         self::$plugin = $plugin;
         self::$server = $plugin->getServer();
-        $plugin->getServer()->getPluginManager()->registerEvents($plugin, self::Listener);
+        $plugin->getServer()->getPluginManager()->registerEvents($plugin, self::$listener);
     }
 
     /**
-     * @param Vector3    $pos       Vector3 of the FloatingText
-     * @param string     $levelName LevelName of the Level the FloatingText should be in
-     * @param string     $text      The content of the FloatingText
-     * @param string     $title     The title of the FloatingText (If you do not know what this is pass "")
+     * @param Vector3    $pos          Vector3 of the FloatingText
+     * @param string     $levelName    LevelName of the Level the FloatingText should be in
+     * @param string     $text         The content of the FloatingText
+     * @param string     $title        The title of the FloatingText (If you do not know what this is pass "")
      * @param array|bool $showToPlayer The player the FloatingText should be shown to. If you want to show it to all Player, pass false
     */
     public function __construct(Vector3 $pos, $levelName, $text, $title = "", $showToPlayer = false){
@@ -60,9 +60,7 @@ class EasyFloatingText
         }
         $this->id = self::nextFloatingTextID();
         self::$ftps[$this->id] = [[$levelName, $pos], [$text, $title], $showToPlayer];
-        #self::renderFT(self::$ftps[$this->id]);
-        self::$floatingTexts[$this->id] = new FloatingText(self::$server->getLevelByName($levelName), $pos, $text, $title);
-        self::$floatingTexts[$this->id]->update($showToPlayer);
+        self::renderFT($this->id, self::$ftps[$this->id], true);
         return true;
     }
 
@@ -80,32 +78,39 @@ class EasyFloatingText
         return self::$ftIndex++;
     }
 
+    private static function renderFT($ftID, $ftData, $fullRender = false){
+        self::$floatingTexts[$this->id] = new FloatingText(self::$server->getLevelByName($ftData[0][0]), $ftData[0][1], $ftData[1][0], $ftData[1][1]);
+        if($fullRender){
+            self::$floatingTexts[$this->id]->update($ftData[2]);
+        }
+    }
+
     public static function updateAllFloatingTexts($playerLevelArray = NULL){
         self::hideAllFTPs();
         if($playerLevelArray == NULL){
             $this->showAllFTPs();
         }else{
-            foreach($this->floatingTextConfig->getAll() as $configFT){
-                $configFT = $configFT[0];
-                $this->FloatingTexts[$this->IndexFTC] = new FloatingText($this, $this->getServer()->getLevelByName($configFT[0]), new Vector3($configFT[1], $configFT[2], $configFT[3]), $configFT[4]);
+            foreach($this->floatingTextConfig->getAll() as $ftData){
+                $ftData = $ftData[0];
+                $this->FloatingTexts[self::$ftIndex] = new FloatingText($this, self::$server->getLevelByName($ftData[0]), new Vector3($ftData[1], $ftData[2], $ftData[3]), $ftData[4]);
                 if(isset($this->FloatingTexts)){
-                    foreach($this->getServer()->getOnlinePlayers() as $player){
-                        foreach($this->FloatingTexts as $FloatingTextObject){
+                    foreach(self::$server->getOnlinePlayers() as $player){
+                        foreach($this->FloatingTexts as $floatingTextObject){
                             if(!isset($playerLevelArray[$player->getName()])){
                                 $playerLevel = $player->getLevel()->getName();
                             }else{
                                 $playerLevel = $playerLevelArray[$player->getName()];
                             }
-                            $FloatingTextLevel = $FloatingTextObject->getLevel()->getName();
+                            $FloatingTextLevel = $floatingTextObject->getLevel()->getName();
                             echo("Checking "."PlayerLevel: ".$playerLevel." FTPLevel: ".$FloatingTextLevel." PlayerName: " . $player->getName() . "\n");
                             if($playerLevel == $FloatingTextLevel){
-                                $FloatingTextObject->update($player);
+                                $floatingTextObject->update($player);
                                 //echo("Re-Created "."PlayerLevel: ".$playerLevel." FTPLevel: ".$FloatingTextLevel." PlayerName: " . $player->getName() . "\n");
                             }
                         }
                     }
                 }
-                $this->IndexFTC++;
+                self::$ftIndex++;
             }
         }
     }
@@ -117,26 +122,21 @@ class EasyFloatingText
     }
 
     public static function showAllFTPs(){
-        foreach($this->floatingTextConfig->getAll() as $configFT){
-            $configFT = $configFT[0];
-			$this->getServer()->loadLevel($configFT[0]);
-            $this->FloatingTexts[$this->IndexFTC] = new FloatingText($this, $this->getServer()->getLevelByName($configFT[0]), new Vector3($configFT[1], $configFT[2], $configFT[3]), $configFT[4]);
-            if(isset($this->FloatingTexts)){
-                foreach($this->getServer()->getOnlinePlayers() as $player){
-                    foreach($this->FloatingTexts as $FloatingTextObject){
-                        $playerLevel = $player->getLevel()->getName();
-                        $FloatingTextLevel = $FloatingTextObject->getLevel()->getName();
-                        //echo("Checking "."PlayerLevel: ".$playerLevel." FTPLevel: ".$FloatingTextLevel." PlayerName: " . $player->getName() . "\n");
-                        if($playerLevel == $FloatingTextLevel){
-                            $FloatingTextObject->update($player);
-                            //echo("Re-Created "."PlayerLevel: ".$playerLevel." FTPLevel: ".$FloatingTextLevel." PlayerName: " . $player->getName() . "\n");
-                        }
+        foreach(self::$ftps as $id => $ftData){
+			self::$server->loadLevel($ftData[0][0]);
+            self::renderFT($id, $ftData);
+            foreach(self::$server->getOnlinePlayers() as $player){
+                foreach($this->FloatingTexts as $floatingTextObject){
+                    $playerLevel = $player->getLevel()->getName();
+                    $FloatingTextLevel = $floatingTextObject->getLevel()->getName();
+                    Utils::debug("Checking if should render "."PlayerLevel: ".$playerLevel." FTPLevel: ".$FloatingTextLevel." PlayerName: ".$player->getName());
+                    if($playerLevel == $FloatingTextLevel && ($ftData[2] === false || $ftData[2] == $player)){
+                        $floatingTextObject->update($player);
+                        Utils::debug("Rendered "."PlayerLevel: ".$playerLevel." FTPLevel: ".$FloatingTextLevel." PlayerName: " . $player->getName());
                     }
                 }
             }
-            $this->IndexFTC++;
-            echo("IndexFTC++");
-            var_dump($this->IndexFTC);
+            self::$ftIndex++;
         }
     }
 }
