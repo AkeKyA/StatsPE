@@ -29,40 +29,40 @@ class FloatingText extends FloatingTextParticle{
 		$this->internalText = $text;
 		if($title instanceof \Closure) $title = call_user_func($title);
 		if($text instanceof \Closure) $text = call_user_func($text);
-		$this->ftp = new FloatingTextParticle($position, $text,$title);
+		$this->ftp = new FloatingTextParticle($position, $text, $title);
 		array_push(self::$ftps, $this);
 	}
 
-	public function setText($text, Player $player = null) {
+	public function setText($text, Player $player = null){
 		$this->internalText = $text;
 		$this->update($player);
 	}
-	public function setTitle($title, Player $player = null) {
+	public function setTitle($title, Player $player = null){
 		$this->internalTitle = $title;
 		$this->update($player);
 	}
-	public function setInvisible($value = true, Player $player = null) {
+	public function setInvisible($value = true, Player $player = null){
 		$this->internalInvisible = $value;
 		$this->update($player);
 	}
 
-	public function isInvisible() {
+	public function isInvisible(){
 		return $this->internalInvisible;
 	}
-	public function getTitle() {
+	public function getTitle(){
 		if($this->internalTitle instanceof \Closure) return call_user_func($this->internalTitle);
 		return $this->internalTitle;
 	}
-	public function getText() {
+	public function getText(){
 		if($this->internalText instanceof \Closure) return call_user_func($this->internalText);
 		return $this->internalText;
 	}
 
-	public function update(Player $player = null) {
+	public function update(Player $player = null){
 		$this->ftp->setText($this->getText());
 		$this->ftp->setTitle($this->getTitle());
 		$this->ftp->setInvisible($this->internalInvisible);
-		if($player === null){
+		if($player === null || $player === false){
 			$this->showToAll();
 		}else{
 			$this->internalInvisible = false;
