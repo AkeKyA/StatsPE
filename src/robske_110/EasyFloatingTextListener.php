@@ -9,9 +9,15 @@ use pocketmine\Player;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\entity\EntityLevelChangeEvent;
 
-class EasyFloatingTextListener extends Listener
-{
+class EasyFloatingTextListener extends Listener{
+
+    public function __construct($plugin){
+        Utils::debug("[INIT] __cnstrctEsyFltingTxtListnr");
+        parent::__construct($plugin);
+    }
+
     public function onPlayerJoin(PlayerJoinEvent $event){
+        Utils::debug("[EasyFloatingTextListener] PlyrJoinEvnt");
         EasyFloatingText::updateAllFloatingTexts();
     }
 
@@ -27,6 +33,7 @@ class EasyFloatingTextListener extends Listener
 
     public function LevelChangeEvent(EntityLevelChangeEvent $event){
         if($event->getEntity() instanceof Player){
+            Utils::debug("[EasyFloatingTextListener] LvlChangeEvnt");
             $playerLevel[$event->getEntity()->getName()] = $event->getTarget()->getName();
             EasyFloatingText::updateAllFloatingTexts($playerLevel);
         }

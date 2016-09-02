@@ -3,7 +3,6 @@
 namespace robske_110\Utils;
 
 abstract class Utils{
-	#private static $server;
 	private static $logger;
 	private static $debugEnabled;
 	private static $debugFile;
@@ -18,11 +17,11 @@ abstract class Utils{
 	const DEBUG_LVL_NORMAL = 1;
 	const DEBUG_LVL_PRIOR = 2;
     
-	public static function init(BanWarn $main, $debugEnabled = false){
-		self::$logger = $main->getLogger();
+	public static function init($plugin, $debugEnabled = false){
+		self::$logger = $plugin->getLogger();
 		self::$debugEnabled = $debugEnabled;
 		if($debugEnabled){
-			$filename = $main->getDataFolder()."debug".date("d:m:Y_H-i-s", time()).".txt";
+			$filename = $plugin->getDataFolder()."debug".date("d:m:Y_H-i-s", time()).".txt";
 			self::$debugFile = fopen($filename,'w+');
 			if(!self::$debugFile){
 				self::$debugEnabled = false;
